@@ -3,6 +3,7 @@ package code.with.cal.timeronservicetutorial
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import java.util.*
 
 class TimerService : Service()
@@ -14,6 +15,7 @@ class TimerService : Service()
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int
     {
         val time = intent.getDoubleExtra(TIME_EXTRA, 0.0)
+        Log.d("MainActivity", "Started Time" )
         timer.scheduleAtFixedRate(TimeTask(time), 0, 1000)
         return START_NOT_STICKY
     }

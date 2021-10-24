@@ -5,24 +5,27 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import code.with.cal.timeronservicetutorial.databinding.ActivityMainBinding
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity(), SensorEventListener
+class MainActivity : AppCompatActivity()
 {
     private lateinit var binding: ActivityMainBinding
     private var timerStarted = false
     private lateinit var serviceIntent: Intent
+    private lateinit var serviceIntentAcc: Intent
     private var time = 0.0
-    private lateinit var mSensorManager: SensorManager
-    private var mSensors: Sensor? = null
+    private var acceleration = 0.0
+    private var mSensorManager : SensorManager ?= null
+    private var mAccelerometer : Sensor ?= null
+
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -36,20 +39,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener
         serviceIntent = Intent(applicationContext, TimerService::class.java)
         registerReceiver(updateTime, IntentFilter(TimerService.TIMER_UPDATED))
 
-        mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-//        Define the sensor
-        mSensors = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-    }
+        serviceIntentAcc = Intent(applicationContext, AccelerationService::class.java)
+        registerReceiver(updateAccel, IntentFilter(AccelerationService.ACC_Updated))
 
-    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+        Log.d("MainActivity", "onCreat")
 
-    }
-
-    override    fun onSensorChanged(p0: SensorEvent?) {
-//        Sensor change value
-        val millibarsOfPressure = p0!!.values[0]
-        if (p0.sensor.type == Sensor.TYPE_ACCELEROMETER)
-            Toast.makeText(this, "" + millibarsOfPressure + " lx", Toast.LENGTH_SHORT).show()
     }
 
     private fun resetTimer()
@@ -69,11 +63,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener
 
     private fun startTimer()
     {
-        serviceIntent.putExtra(TimerService.TIME_EXTRA, time)
-        startService(serviceIntent)
+        serviceIntentAcc.putExtra(AccelerationService.ACC_Updated, acceleration)
+        startService(serviceIntentAcc)
         binding.startStopButton.text = "Stop"
         binding.startStopButton.icon = getDrawable(R.drawable.ic_baseline_pause_24)
         timerStarted = true
+        Log.d("MainActivity", "Start")
+    }
+
+    private fun startMeasuring()
+    {
+        serviceIntentAcc.putExtra(AccelerationService.ACC_Updated, acceleration)
+        startService(serviceIntentAcc)
+
     }
 
     private fun stopTimer()
@@ -98,6 +100,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener
         override fun onReceive(context: Context, intent: Intent)
         {
 
+            acceleration = intent.getDoubleExtra(AccelerationService.ACC_EXTRA, 0.2)
+            binding.accel.text = acceleration.toString()
+            Log.d("MainActivity_Receive", (acceleration.toString()))
+            /*val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createOneShot(500,
+                    VibrationEffect.DEFAULT_AMPLITUDE))
+            }
+            else {
+                v.vibrate(500)
+            }*/
         }
     }
 

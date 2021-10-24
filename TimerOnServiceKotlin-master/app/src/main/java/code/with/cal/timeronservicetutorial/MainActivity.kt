@@ -71,6 +71,8 @@ class MainActivity : AppCompatActivity()
         }
     }
 
+    private val updateAccelleration: BroadcastReceiver = object : BroadcastReceiver()
+
     private fun getTimeStringFromDouble(time: Double): String
     {
         val resultInt = time.roundToInt()
