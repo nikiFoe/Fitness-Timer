@@ -4,18 +4,25 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import androidx.appcompat.app.AppCompatActivity
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
-import android.text.format.Time
+import android.util.Log
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import code.with.cal.timeronservicetutorial.databinding.ActivityMainBinding
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity()
+class MainActivity : AppCompatActivity(), SensorEventListener
 {
     private lateinit var binding: ActivityMainBinding
     private var timerStarted = false
     private lateinit var serviceIntent: Intent
     private var time = 0.0
+    private lateinit var mSensorManager: SensorManager
+    private var mSensors: Sensor? = null
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -28,6 +35,21 @@ class MainActivity : AppCompatActivity()
 
         serviceIntent = Intent(applicationContext, TimerService::class.java)
         registerReceiver(updateTime, IntentFilter(TimerService.TIMER_UPDATED))
+
+        mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+//        Define the sensor
+        mSensors = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    }
+
+    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+
+    }
+
+    override    fun onSensorChanged(p0: SensorEvent?) {
+//        Sensor change value
+        val millibarsOfPressure = p0!!.values[0]
+        if (p0.sensor.type == Sensor.TYPE_ACCELEROMETER)
+            Toast.makeText(this, "" + millibarsOfPressure + " lx", Toast.LENGTH_SHORT).show()
     }
 
     private fun resetTimer()
@@ -71,6 +93,14 @@ class MainActivity : AppCompatActivity()
         }
     }
 
+    private val updateAccel:BroadcastReceiver = object : BroadcastReceiver()
+    {
+        override fun onReceive(context: Context, intent: Intent)
+        {
+
+        }
+    }
+
     private fun getTimeStringFromDouble(time: Double): String
     {
         val resultInt = time.roundToInt()
@@ -81,5 +111,10 @@ class MainActivity : AppCompatActivity()
         return makeTimeString(hours, minutes, seconds)
     }
 
-    private fun makeTimeString(hour: Int, min: Int, sec: Int): String = String.format("%02d:%02d:%02d", hour, min, sec)
+    private fun makeTimeString(hour: Int, min: Int, sec: Int): String = String.format(
+        "%02d:%02d:%02d",
+        hour,
+        min,
+        sec
+    )
 }

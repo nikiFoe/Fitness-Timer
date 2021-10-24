@@ -47,4 +47,14 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <TextView
+        android:id="@+id/accel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="_____"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textSize="60sp" />
+
 </LinearLayout>
