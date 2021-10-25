@@ -19,6 +19,7 @@
         </activity>
         <service android:name=".TimerService"/>
         <service android:name=".AccelerationService"/>
+        <service android:name=".VibrateService"/>
     </application>
 
 </manifest>

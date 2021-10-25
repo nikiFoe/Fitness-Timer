@@ -13,7 +13,9 @@ import android.os.Vibrator
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import code.with.cal.timeronservicetutorial.databinding.ActivityMainBinding
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.math.round
 
 class MainActivity : AppCompatActivity()
 {
@@ -21,10 +23,13 @@ class MainActivity : AppCompatActivity()
     private var timerStarted = false
     private lateinit var serviceIntent: Intent
     private lateinit var serviceIntentAcc: Intent
+    private lateinit var serviceIntentVibration: Intent
     private var time = 0.0
     private var acceleration = 0.0
+    private var current_accel = 0.0
     private var mSensorManager : SensorManager ?= null
     private var mAccelerometer : Sensor ?= null
+    private lateinit var v : Vibrator
 
 
     override fun onCreate(savedInstanceState: Bundle?)
@@ -33,7 +38,7 @@ class MainActivity : AppCompatActivity()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.startStopButton.setOnClickListener { startStopTimer() }
+        binding.startStopButton.setOnClickListener { startStopMeasurment() }
         binding.resetButton.setOnClickListener { resetTimer() }
 
         serviceIntent = Intent(applicationContext, TimerService::class.java)
@@ -42,7 +47,11 @@ class MainActivity : AppCompatActivity()
         serviceIntentAcc = Intent(applicationContext, AccelerationService::class.java)
         registerReceiver(updateAccel, IntentFilter(AccelerationService.ACC_Updated))
 
+        serviceIntentVibration = Intent(applicationContext, VibrateService::class.java)
+
         Log.d("MainActivity", "onCreat")
+
+        v = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
     }
 
@@ -53,30 +62,31 @@ class MainActivity : AppCompatActivity()
         binding.timeTV.text = getTimeStringFromDouble(time)
     }
 
-    private fun startStopTimer()
+    private fun startStopMeasurment()
     {
         if(timerStarted)
             stopTimer()
         else
-            startTimer()
+            startMeasurment()
     }
 
-    private fun startTimer()
+    private fun startMeasurment()
     {
         serviceIntentAcc.putExtra(AccelerationService.ACC_Updated, acceleration)
         startService(serviceIntentAcc)
         binding.startStopButton.text = "Stop"
         binding.startStopButton.icon = getDrawable(R.drawable.ic_baseline_pause_24)
-        timerStarted = true
-        Log.d("MainActivity", "Start")
     }
 
-    private fun startMeasuring()
+    private fun startTimer()
     {
-        serviceIntentAcc.putExtra(AccelerationService.ACC_Updated, acceleration)
-        startService(serviceIntentAcc)
-
+        serviceIntent.putExtra(TimerService.TIMER_UPDATED, time)
+        startService(serviceIntent)
+        timerStarted = true
+        Log.d("MainActivity", "Timer Start")
     }
+
+
 
     private fun stopTimer()
     {
@@ -92,6 +102,12 @@ class MainActivity : AppCompatActivity()
         {
             time = intent.getDoubleExtra(TimerService.TIME_EXTRA, 0.0)
             binding.timeTV.text = getTimeStringFromDouble(time)
+
+            if (time > 5){
+                startService(serviceIntentVibration)
+                //v.vibrate(VibrationEffect.createOneShot(500,
+                    //VibrationEffect.DEFAULT_AMPLITUDE))
+            }
         }
     }
 
@@ -100,9 +116,22 @@ class MainActivity : AppCompatActivity()
         override fun onReceive(context: Context, intent: Intent)
         {
 
-            acceleration = intent.getDoubleExtra(AccelerationService.ACC_EXTRA, 0.2)
-            binding.accel.text = acceleration.toString()
-            Log.d("MainActivity_Receive", (acceleration.toString()))
+            acceleration = intent.getDoubleExtra(AccelerationService.ACC_EXTRA, 0.0)
+            current_accel = round2Decimal(acceleration)
+            binding.accel.text = current_accel.toString()
+
+            if (abs(current_accel) > 14.0 && timerStarted == false){
+                Log.d("MainActivity_Receive", current_accel.toString())
+                startTimer()
+                startService(serviceIntentVibration)
+                /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createOneShot(500,
+                        VibrationEffect.DEFAULT_AMPLITUDE))
+                }
+                else {
+                    v.vibrate(500)
+                }*/
+            }
             /*val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 v.vibrate(VibrationEffect.createOneShot(500,
@@ -112,6 +141,13 @@ class MainActivity : AppCompatActivity()
                 v.vibrate(500)
             }*/
         }
+    }
+
+    private fun round2Decimal(accel: Double): Double
+    {
+        val accel_rounded = round((accel*100))/100
+
+        return accel_rounded
     }
 
     private fun getTimeStringFromDouble(time: Double): String
