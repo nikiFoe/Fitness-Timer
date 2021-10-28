@@ -1,9 +1,12 @@
 package code.with.cal.timeronservicetutorial
 
+import android.app.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Build
@@ -11,7 +14,9 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
 import code.with.cal.timeronservicetutorial.databinding.ActivityMainBinding
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -30,7 +35,6 @@ class MainActivity : AppCompatActivity()
     private var mSensorManager : SensorManager ?= null
     private var mAccelerometer : Sensor ?= null
     private lateinit var v : Vibrator
-
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -55,6 +59,8 @@ class MainActivity : AppCompatActivity()
 
     }
 
+
+
     private fun resetTimer()
     {
         stopTimer()
@@ -64,10 +70,14 @@ class MainActivity : AppCompatActivity()
 
     private fun startStopMeasurment()
     {
-        if(timerStarted)
+        if(timerStarted) {
             stopTimer()
-        else
+            Log.d("MainActivity", "Stop")
+
+        }else {
             startMeasurment()
+
+        }
     }
 
     private fun startMeasurment()
@@ -76,7 +86,9 @@ class MainActivity : AppCompatActivity()
         startService(serviceIntentAcc)
         binding.startStopButton.text = "Stop"
         binding.startStopButton.icon = getDrawable(R.drawable.ic_baseline_pause_24)
+        timerStarted = true
     }
+
 
     private fun startTimer()
     {
@@ -102,12 +114,6 @@ class MainActivity : AppCompatActivity()
         {
             time = intent.getDoubleExtra(TimerService.TIME_EXTRA, 0.0)
             binding.timeTV.text = getTimeStringFromDouble(time)
-
-            if (time > 5){
-                startService(serviceIntentVibration)
-                //v.vibrate(VibrationEffect.createOneShot(500,
-                    //VibrationEffect.DEFAULT_AMPLITUDE))
-            }
         }
     }
 
@@ -115,33 +121,18 @@ class MainActivity : AppCompatActivity()
     {
         override fun onReceive(context: Context, intent: Intent)
         {
-
             acceleration = intent.getDoubleExtra(AccelerationService.ACC_EXTRA, 0.0)
             current_accel = round2Decimal(acceleration)
             binding.accel.text = current_accel.toString()
 
-            if (abs(current_accel) > 14.0 && timerStarted == false){
+            if (abs(current_accel) > 14.0 && timerStarted == true){
                 Log.d("MainActivity_Receive", current_accel.toString())
                 startTimer()
-                startService(serviceIntentVibration)
-                /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    v.vibrate(VibrationEffect.createOneShot(500,
-                        VibrationEffect.DEFAULT_AMPLITUDE))
-                }
-                else {
-                    v.vibrate(500)
-                }*/
             }
-            /*val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                v.vibrate(VibrationEffect.createOneShot(500,
-                    VibrationEffect.DEFAULT_AMPLITUDE))
-            }
-            else {
-                v.vibrate(500)
-            }*/
         }
     }
+
+
 
     private fun round2Decimal(accel: Double): Double
     {
