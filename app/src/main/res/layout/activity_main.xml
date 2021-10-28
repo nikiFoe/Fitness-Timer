@@ -57,4 +57,23 @@
         android:textColor="@color/black"
         android:textSize="60sp" />
 
+
+    <TextView
+        android:id="@+id/volume"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="25"
+        android:textAlignment="center"
+        android:textColor="@color/grey"
+        android:textSize="40sp" />
+
+    <SeekBar
+        android:id="@+id/volumseekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:min="0"
+        android:max="180"
+        android:progress="25"
+        android:layout_margin="30dp"/>
 </LinearLayout>

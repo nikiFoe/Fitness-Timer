@@ -24,12 +24,16 @@ class TimerService : Service()
     private val channelId = "i.apps.notifications"
     private val description = "Test notification"
 
+
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int
     {
         val time = intent.getDoubleExtra(TIME_EXTRA, 0.0)
+        val wantedValue = intent.getDoubleExtra(INTERVAL, 0.0).toDouble()
+        Log.d("EsssE", wantedValue.toString())
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         Log.d("MainActivity", "Started Time")
-        timer.scheduleAtFixedRate(TimeTask(time), 0, 1000)
+        timer.scheduleAtFixedRate(TimeTask(time, wantedValue), 0, 1000)
+
         return START_NOT_STICKY
     }
 
@@ -47,17 +51,18 @@ class TimerService : Service()
     }
 
 
-    private inner class TimeTask(private var time: Double) : TimerTask() {
+    private inner class TimeTask(private var time: Double, private var wantedInterval : Double) : TimerTask() {
         override fun run() {
             val intent = Intent(TIMER_UPDATED)
             time++
             intent.putExtra(TIME_EXTRA, time)
             sendBroadcast(intent)
-            if ((time % 5).equals(0.0)) {
+            Log.d("WHAT", wantedInterval.toString())
+            if ((time%wantedInterval).equals(0.0)) {
                 test(true, time)
-                Log.d("TimerService", (time % 5).equals(0.0).toString())
+                Log.d("TimerService_true", (time % wantedInterval).equals(0.0).toString())
             } else {
-                Log.d("TimerService", (time % 5).equals(0.0).toString())
+                Log.d("TimerService_false", (time % wantedInterval).equals(0.0).toString())
                 test(false, time)
             }
         }
@@ -105,6 +110,7 @@ class TimerService : Service()
     {
         const val TIMER_UPDATED = "timerUpdated"
         const val TIME_EXTRA = "timeExtra"
+        const val INTERVAL = "timeInterval"
     }
 
 }

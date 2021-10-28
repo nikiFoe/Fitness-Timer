@@ -15,8 +15,10 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.widget.RemoteViews
+import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
+import androidx.recyclerview.widget.RecyclerView
 import code.with.cal.timeronservicetutorial.databinding.ActivityMainBinding
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -36,6 +38,9 @@ class MainActivity : AppCompatActivity()
     private var mSensorManager : SensorManager ?= null
     private var mAccelerometer : Sensor ?= null
     private lateinit var v : Vibrator
+    private var TAG = "MainActivity"
+    private var wantedTime = 25.0
+
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -54,10 +59,24 @@ class MainActivity : AppCompatActivity()
 
         serviceIntentVibration = Intent(applicationContext, VibrateService::class.java)
 
-        Log.d("MainActivity", "onCreat")
+        Log.d(TAG, "onCreat")
 
         v = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        binding.volumseekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
+                Log.d(TAG, "ProgressbarChange " + p1)
+                binding.volume.text = p1.toString()
+            }
 
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+                Log.d(TAG, "Progressbar_StartTouch")
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+                Log.d(TAG, "Progressbar_StopTouch")
+                wantedTime = (binding.volume.text.toString()).toDouble()
+            }
+        })
     }
 
 
@@ -73,7 +92,7 @@ class MainActivity : AppCompatActivity()
     {
         if(timerStarted) {
             stopTimer()
-            Log.d("MainActivity", "Stop")
+            Log.d(TAG, "TimerStop")
 
         }else {
             startMeasurment()
@@ -94,9 +113,10 @@ class MainActivity : AppCompatActivity()
     private fun startTimer()
     {
         serviceIntent.putExtra(TimerService.TIMER_UPDATED, time)
+        serviceIntent.putExtra(TimerService.INTERVAL, wantedTime)
         startService(serviceIntent)
         timerStarted = true
-        Log.d("MainActivity", "Timer Start")
+        Log.d(TAG, "TimerStart")
     }
 
 
@@ -115,11 +135,11 @@ class MainActivity : AppCompatActivity()
         {
             time = intent.getDoubleExtra(TimerService.TIME_EXTRA, 0.0)
             binding.timeTV.text = getTimeStringFromDouble(time)
-            if(time>=7)
+            if(time>wantedTime)
             {
                 resetTimer()
                 binding.timeTV.text = getTimeStringFromDouble(time)
-                Log.d("MainActivity", "TimerRunOut")
+                Log.d(TAG, "TimerRunOut")
             }
         }
     }
@@ -131,9 +151,8 @@ class MainActivity : AppCompatActivity()
             acceleration = intent.getDoubleExtra(AccelerationService.ACC_EXTRA, 0.0)
             current_accel = round2Decimal(acceleration)
             binding.accel.text = current_accel.toString()
-            //Log.d("MainActivity_Receive_v1", current_accel.toString())
             if (abs(current_accel) > 14.0&&timerStarted==false){
-                Log.d("MainActivity_Receive", current_accel.toString())
+                Log.d(TAG, "Acceleration " + current_accel.toString())
                 startTimer()
             }
         }
