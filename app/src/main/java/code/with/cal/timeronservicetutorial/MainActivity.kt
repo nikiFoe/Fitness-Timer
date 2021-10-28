@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity()
 {
     private lateinit var binding: ActivityMainBinding
     private var timerStarted = false
+    private var measurmentStarted = false
     private lateinit var serviceIntent: Intent
     private lateinit var serviceIntentAcc: Intent
     private lateinit var serviceIntentVibration: Intent
@@ -86,7 +87,7 @@ class MainActivity : AppCompatActivity()
         startService(serviceIntentAcc)
         binding.startStopButton.text = "Stop"
         binding.startStopButton.icon = getDrawable(R.drawable.ic_baseline_pause_24)
-        timerStarted = true
+        measurmentStarted = true
     }
 
 
@@ -114,6 +115,12 @@ class MainActivity : AppCompatActivity()
         {
             time = intent.getDoubleExtra(TimerService.TIME_EXTRA, 0.0)
             binding.timeTV.text = getTimeStringFromDouble(time)
+            if(time>=7)
+            {
+                resetTimer()
+                binding.timeTV.text = getTimeStringFromDouble(time)
+                Log.d("MainActivity", "TimerRunOut")
+            }
         }
     }
 
@@ -124,8 +131,8 @@ class MainActivity : AppCompatActivity()
             acceleration = intent.getDoubleExtra(AccelerationService.ACC_EXTRA, 0.0)
             current_accel = round2Decimal(acceleration)
             binding.accel.text = current_accel.toString()
-
-            if (abs(current_accel) > 14.0 && timerStarted == true){
+            //Log.d("MainActivity_Receive_v1", current_accel.toString())
+            if (abs(current_accel) > 14.0&&timerStarted==false){
                 Log.d("MainActivity_Receive", current_accel.toString())
                 startTimer()
             }

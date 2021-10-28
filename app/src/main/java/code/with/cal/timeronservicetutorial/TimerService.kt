@@ -54,16 +54,16 @@ class TimerService : Service()
             intent.putExtra(TIME_EXTRA, time)
             sendBroadcast(intent)
             if ((time % 5).equals(0.0)) {
-                test(true)
+                test(true, time)
                 Log.d("TimerService", (time % 5).equals(0.0).toString())
             } else {
                 Log.d("TimerService", (time % 5).equals(0.0).toString())
-                test(false)
+                test(false, time)
             }
         }
     }
 
-    fun test(count: Boolean)
+    fun test(count: Boolean, runningTime: Double)
     {
         if (count) {
             val pattern = longArrayOf(400, 600, 500)
@@ -85,9 +85,8 @@ class TimerService : Service()
                 notificationChannel.vibrationPattern = pattern
                 notificationManager.createNotificationChannel(notificationChannel)
                 builder = Notification.Builder(this, channelId).setContentTitle(
-                    "NOTIFICATION USING " +
-                            "KOTLIN"
-                ).setContentText("Test Notification").setSmallIcon(R.drawable.ic_brightness)
+                    "Fitness Timer Notification"
+                ).setContentText("Timer runs for " + runningTime.toString() + "s") .setSmallIcon(R.drawable.ic_brightness)
                     .setLargeIcon(
                         BitmapFactory.decodeResource(
                             this.resources, R.drawable
@@ -106,7 +105,6 @@ class TimerService : Service()
     {
         const val TIMER_UPDATED = "timerUpdated"
         const val TIME_EXTRA = "timeExtra"
-
     }
 
 }
