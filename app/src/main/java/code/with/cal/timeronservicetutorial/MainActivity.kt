@@ -27,14 +27,16 @@ import kotlin.math.round
 class MainActivity : AppCompatActivity()
 {
     private lateinit var binding: ActivityMainBinding
-    private var timerStarted = false
     private var measurmentStarted = false
     private lateinit var serviceIntent: Intent
     private lateinit var serviceIntentAcc: Intent
     private lateinit var serviceIntentVibration: Intent
+    private lateinit var serviceIntentTest: Intent
     private var time = 0.0
     private var acceleration = 0.0
     private var current_accel = 0.0
+    private var timerStart = false
+    private var timerRunning = false
     private var mSensorManager : SensorManager ?= null
     private var mAccelerometer : Sensor ?= null
     private lateinit var v : Vibrator
@@ -56,8 +58,11 @@ class MainActivity : AppCompatActivity()
 
         serviceIntentAcc = Intent(applicationContext, AccelerationService::class.java)
         registerReceiver(updateAccel, IntentFilter(AccelerationService.ACC_Updated))
+        //intent.putExtra(AccelerationService.TIMER_RUNNING, false)
 
         serviceIntentVibration = Intent(applicationContext, VibrateService::class.java)
+        serviceIntentTest = Intent(applicationContext, AccelerationService::class.java)
+
 
         Log.d(TAG, "onCreat")
 
@@ -84,16 +89,16 @@ class MainActivity : AppCompatActivity()
     private fun resetTimer()
     {
         stopTimer()
+        //startMeasurment()
         time = 0.0
         binding.timeTV.text = getTimeStringFromDouble(time)
     }
 
     private fun startStopMeasurment()
     {
-        if(timerStarted) {
+        if(timerRunning) {
             stopTimer()
             Log.d(TAG, "TimerStop")
-
         }else {
             startMeasurment()
 
@@ -115,7 +120,6 @@ class MainActivity : AppCompatActivity()
         serviceIntent.putExtra(TimerService.TIMER_UPDATED, time)
         serviceIntent.putExtra(TimerService.INTERVAL, wantedTime)
         startService(serviceIntent)
-        timerStarted = true
         Log.d(TAG, "TimerStart")
     }
 
@@ -124,9 +128,10 @@ class MainActivity : AppCompatActivity()
     private fun stopTimer()
     {
         stopService(serviceIntent)
+        //timerRunning = false
+        //serviceIntentAcc.putExtra(AccelerationService.TIMER_RUNNING, timerRunning)
         binding.startStopButton.text = "Start"
         binding.startStopButton.icon = getDrawable(R.drawable.ic_baseline_play_arrow_24)
-        timerStarted = false
     }
 
     private val updateTime: BroadcastReceiver = object : BroadcastReceiver()
@@ -138,6 +143,11 @@ class MainActivity : AppCompatActivity()
             if(time>wantedTime)
             {
                 resetTimer()
+                timerRunning = false
+                serviceIntentAcc.putExtra(AccelerationService.TIMER_RUNNING, timerRunning)
+                var newIntent = Intent(applicationContext, AccelerationService::class.java)
+                newIntent.putExtra(AccelerationService.TIMER_RUNNING, false)
+                startService(newIntent)
                 binding.timeTV.text = getTimeStringFromDouble(time)
                 Log.d(TAG, "TimerRunOut")
             }
@@ -148,13 +158,23 @@ class MainActivity : AppCompatActivity()
     {
         override fun onReceive(context: Context, intent: Intent)
         {
-            acceleration = intent.getDoubleExtra(AccelerationService.ACC_EXTRA, 0.0)
+            acceleration = serviceIntentAcc.getDoubleExtra(AccelerationService.ACC_EXTRA, 0.0)
+            timerStart = serviceIntentAcc.getBooleanExtra(AccelerationService.TIMER_START, false)
+            Log.d("timerStart", timerStart.toString())
+            //timerRunning = intent.getBooleanExtra(AccelerationService.TIMER_RUNNING,true)
             current_accel = round2Decimal(acceleration)
             binding.accel.text = current_accel.toString()
-            if (abs(current_accel) > 14.0&&timerStarted==false){
-                Log.d(TAG, "Acceleration " + current_accel.toString())
-                startTimer()
-            }
+            timerRunning = true
+            serviceIntentAcc.putExtra(AccelerationService.TIMER_RUNNING, timerRunning)
+            timerStart = false
+            serviceIntentAcc.putExtra(AccelerationService.TIMER_START, timerStart)
+            var newIntent = Intent(applicationContext, AccelerationService::class.java)
+            newIntent.putExtra(AccelerationService.TIMER_RUNNING, timerRunning)
+            startService(newIntent)
+            //sendBroadcast(newIntent)
+            startTimer()
+            Log.d("TimmerRunning", serviceIntentAcc.getBooleanExtra(AccelerationService.TIMER_RUNNING, false).toString())
+
         }
     }
 
@@ -163,7 +183,6 @@ class MainActivity : AppCompatActivity()
     private fun round2Decimal(accel: Double): Double
     {
         val accel_rounded = round((accel*100))/100
-
         return accel_rounded
     }
 
